@@ -1,0 +1,181 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Portfolio Contact Form AWS Infrastructure'
+
+Parameters:
+  RecipientEmail:
+    Type: String
+    Default: 'paul.p.toner@gmail.com'
+    Description: 'Email address to send contact form notifications to'
+  
+  RecipientPhone:
+    Type: String
+    Default: '7202761928'
+    Description: 'Phone number to send SMS notifications to'
+  
+  Environment:
+    Type: String
+    Default: 'dev'
+    AllowedValues:
+      - 'dev'
+      - 'prod'
+    Description: 'Environment for deployment'
+
+Resources:
+  # IAM Role for Lambda execution
+  ContactFormLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: !Sub "${Environment}-contact-form-lambda-policy"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ses:SendEmail'
+                  - 'ses:SendRawEmail'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'sns:Publish'
+                Resource: '*'
+
+  # Lambda Function
+  ContactFormLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${Environment}-portfolio-contact-form"
+      Runtime: nodejs18.x
+      Handler: contactLambda.handler
+      Role: !GetAtt ContactFormLambdaRole.Arn
+      Code:
+        S3Bucket: !Sub "${Environment}-portfolio-lambda-code"  # Replace with your bucket name
+        S3Key: contactLambda.zip  # This will be uploaded during deployment
+      Environment:
+        Variables:
+          RECIPIENT_EMAIL: !Ref RecipientEmail
+          RECIPIENT_PHONE: !Ref RecipientPhone
+          SES_REGION: !Ref AWS::Region
+          SNS_REGION: !Ref AWS::Region
+          NODE_ENV: !Ref Environment
+      Timeout: 30
+      MemorySize: 256
+
+  # API Gateway for Lambda access
+  ContactFormApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub "${Environment}-portfolio-contact-api"
+      Description: API for Portfolio Contact Form
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  # API Gateway Resource (path)
+  ContactResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ContactFormApi
+      ParentId: !GetAtt ContactFormApi.RootResourceId
+      PathPart: 'contact'
+
+  # API Gateway Method (POST)
+  ContactMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ContactFormApi
+      ResourceId: !Ref ContactResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ContactFormLambda.Arn}/invocations"
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+        - StatusCode: '400'
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+        - StatusCode: '500'
+          ResponseModels:
+            application/json: 'Empty'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # CORS support for API Gateway
+  ContactCorsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ContactFormApi
+      ResourceId: !Ref ContactResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Headers: true
+
+  # API Gateway Deployment
+  ContactApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ContactMethod
+      - ContactCorsMethod
+    Properties:
+      RestApiId: !Ref ContactFormApi
+      StageName: !Ref Environment
+
+  # Lambda Permission for API Gateway
+  ContactFormLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref ContactFormLambda
+      Principal: 'apigateway.amazonaws.com'
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ContactFormApi}/*/*/*"
+
+  # SES Email Identity (For sending emails)
+  EmailIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Ref RecipientEmail
+
+Outputs:
+  ApiEndpoint:
+    Description: 'API Gateway endpoint URL for contact form'
+    Value: !Sub "https://${ContactFormApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/contact"
+  
+  LambdaArn:
+    Description: 'ARN of the Lambda function'
+    Value: !GetAtt ContactFormLambda.Arn
+  
+  Region:
+    Description: 'AWS Region'
+    Value: !Ref AWS::Region

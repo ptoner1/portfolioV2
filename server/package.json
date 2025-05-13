@@ -1,0 +1,40 @@
+{
+  "name": "portfolio-server",
+  "version": "1.0.0",
+  "description": "Backend server for the portfolio application",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only server.ts",
+    "deploy:lambda": "ts-node aws/deployLambda.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-lambda": "^3.67.0",
+    "@aws-sdk/client-s3": "^3.803.0",
+    "@aws-sdk/client-ses": "^3.67.0",
+    "@aws-sdk/client-sns": "^3.67.0",
+    "@aws-sdk/s3-request-presigner": "^3.803.0",
+    "aws-amplify": "^6.14.4",
+    "aws-sdk": "^2.1692.0",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^5.1.0",
+    "joi": "^17.13.3"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.149",
+    "@types/body-parser": "^1.19.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
