@@ -1,0 +1,35 @@
+<svg viewBox='0 0 100 100' xmlns="http://www.w3.org/2000/svg">
+
+    <style>
+        .icon {
+            fill: url('#dark-gradient');
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .icon {
+                fill: url('#light-gradient');
+            }
+        }
+    </style>
+
+    <defs>
+        <linearGradient id="dark-gradient" gradientTransform="rotate(45)">
+            <stop stop-color="rgb(176, 236, 254)" offset='0%' />
+            <stop stop-color="rgb(101, 86, 179)" offset='100%' />
+        </linearGradient>
+    </defs>
+
+    <defs>
+        <linearGradient id="light-gradient" gradientTransform="rotate(45)">
+            <stop stop-color="rgb(176, 236, 254)" offset='30%' />
+            <stop stop-color="rgb(101, 86, 179)" offset='100%' />
+        </linearGradient>
+    </defs>
+
+    <path class="icon" d="M 10 10 
+            C 80 10, 135 40, 40 60 
+            C 50 50, 115 40, 10 10" />
+    <path class="icon" d="M 25 20
+            L 25 90
+            L 45 90" />
+</svg>
