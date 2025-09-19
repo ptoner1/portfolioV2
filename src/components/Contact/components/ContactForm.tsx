@@ -16,6 +16,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import MessageIcon from '@mui/icons-material/Message';
 import SendIcon from '@mui/icons-material/Send';
+const CONTACT_URL = import.meta.env.VITE_CONTACT_EMAIL_URL;
 
 // Define animations
 const fadeIn = keyframes`
@@ -259,7 +260,7 @@ const ContactForm: React.FC = () => {
     
     try {
       // Send form data to backend
-      const response = await fetch('/api/contact', {
+      const response = await fetch(CONTACT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
