@@ -93,13 +93,13 @@ const PaintingsPage: React.FC = () => {
       setIsLoading(true);
       try {
         const result = await loadPaintings();
-        result.sort((a: any, b: any) => {
-          const parseDate = (dateStr: string) => {
-            const [month, year] = dateStr.split(' ');
-            return new Date(`${month} 1, ${year}`);
-          };
-          return parseDate(b.createdDate).getTime() - parseDate(a.createdDate).getTime();
-        });
+        // result.sort((a: any, b: any) => {
+        //   const parseDate = (dateStr: string) => {
+        //     const [month, year] = dateStr.split(' ');
+        //     return new Date(`${month} 1, ${year}`);
+        //   };
+        //   return parseDate(b.createdDate).getTime() - parseDate(a.createdDate).getTime();
+        // });
         setPaintings(result);
       } catch (err) {
         console.error('Error fetching paintings:', err);
