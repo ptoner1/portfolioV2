@@ -16,16 +16,12 @@ export default defineConfig({
       name: 'portfolio-app',
       // Configure as host
       remotes: {
-        // Remote modules will be defined here, example:
-        // spotifyProject: 'http://localhost:5001/assets/remoteEntry.js',
+        spotifyApp: process.env.VITE_SPOTIFY_APP_URL || '',
       },
       shared: {
-        // Shared dependencies between host and remotes
-        react: { singleton: true, requiredVersion: '^18.2.0' } as any,
-        'react-dom': { singleton: true, requiredVersion: '^18.2.0' } as any,
-        '@mui/material': { singleton: true, requiredVersion: '^5.14.19' } as any,
-        '@emotion/react': { singleton: true, requiredVersion: '^11.11.1' } as any,
-        '@emotion/styled': { singleton: true, requiredVersion: '^11.11.1' } as any
+        'react': {},
+        'react-dom': {},
+        'styled-components': {},
       }
     }) as any,
   ],

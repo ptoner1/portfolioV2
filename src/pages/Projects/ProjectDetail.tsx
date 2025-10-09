@@ -1,16 +1,12 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Container } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { loadRemoteModule, getProjectMetadata } from '../../utils/federationUtils';
+import { createRoot } from 'react-dom/client';
+import { loadRemoteModule } from '@/utils/federationUtils';
+import { StyleSheetManager } from 'styled-components';
 
 // Styled components
-const ProjectDetailContainer = styled(Container)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  padding: theme.portfolio.spacing.xl,
-  gap: theme.portfolio.spacing.lg,
-}));
 
 const LoadingContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -86,90 +82,156 @@ class ErrorBoundary extends React.Component<
 }
 
 /**
- * ProjectDetail component
- * 
- * This component is responsible for loading and displaying a federated module
- * for a specific project based on the projectId route parameter.
- * 
- * It handles:
- * - Loading states while the remote module is being fetched
- * - Error handling for failed module loads
- * - Maintaining consistent styling with the portfolio theme
+ * Dynamic Remote Component Loader
+ * Handles loading of federated modules with proper error handling
  */
-const ProjectDetail: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
-  const [RemoteComponent, setRemoteComponent] = useState<React.ComponentType<any> | null>(null);
+const DynamicRemoteComponent: React.FC<{ moduleName: string }> = ({ moduleName }) => {
+  const [Component, setComponent] = useState<React.ComponentType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Reset state on projectId change
-    setLoading(true);
-    setError(null);
-    setRemoteComponent(null);
-
-    if (!projectId) {
-      setError(new Error('Project ID is required'));
-      setLoading(false);
-      return;
-    }
-
-    const loadProject = async () => {
+    const loadComponent = async () => {
       try {
-        const projectMetadata = getProjectMetadata(projectId);
+        setLoading(true);
+        setError(null);
         
-        if (!projectMetadata) {
-          throw new Error(`Project configuration not found for ID: ${projectId}`);
-        }
-
-        // Load the remote module
+        console.log(`Loading remote module: ${moduleName}`);
+        
+        // Use the loadRemoteModule utility to load the federated module
         const module = await loadRemoteModule({
-          url: projectMetadata.remoteUrl,
-          scope: projectMetadata.remoteName,
-          module: projectMetadata.componentName,
+          url: import.meta.env.VITE_SPOTIFY_APP_URL || "",
+          scope: 'spotifyApp',
+          module: './App'
         });
-
-        // Set the remote component
-        setRemoteComponent(() => module.default || module);
-        setLoading(false);
+        
+        console.log('Module loaded successfully:', module);
+        
+        // Handle both default and named exports
+        const ComponentToRender = module.default || module;
+        
+        if (!ComponentToRender) {
+          throw new Error('No component found in the remote module');
+        }
+        
+        setComponent(() => ComponentToRender);
       } catch (err) {
         console.error('Failed to load remote module:', err);
-        setError(err as Error);
+        
+        // Enhanced error reporting
+        if (err instanceof Error) {
+          if (err.message.includes('Loading chunk')) {
+            setError('Failed to load remote module chunks. Ensure the remote app is running on main.d29382d3wfcbic.amplifyapp.com');
+          } else if (err.message.includes('Cannot resolve')) {
+            setError('Remote module not found. Check if the module is properly exposed from the remote app');
+          } else {
+            setError(err.message);
+          }
+        } else {
+          setError('Unknown error occurred while loading remote module');
+        }
+      } finally {
         setLoading(false);
       }
     };
 
-    loadProject();
-  }, [projectId]);
+    loadComponent();
+  }, [moduleName]);
+
+  if (loading) {
+    return <LoadingFallback />;
+  }
+
+  if (error) {
+    return (
+      <ErrorContainer>
+        <Typography variant="h5" gutterBottom>
+          Failed to Load Remote Module
+        </Typography>
+        <Typography variant="body1" gutterBottom>
+          We couldn't load the federated module. This could be because:
+        </Typography>
+        <ul>
+          <li>The remote application is not running at the expected URL</li>
+          <li>There's a network connectivity issue</li>
+          <li>The module export format is incompatible</li>
+          <li>CORS headers are not properly configured</li>
+        </ul>
+        <Typography variant="body2" fontStyle="italic" mt={2}>
+          Error details: {error}
+        </Typography>
+        <Typography variant="body2" mt={1}>
+          Make sure the remote app is running: <code>npm start</code> in the sort-my-liked-spotify/client directory
+        </Typography>
+      </ErrorContainer>
+    );
+  }
+
+  if (!Component) {
+    return (
+      <ErrorContainer>
+        <Typography variant="h5" gutterBottom>
+          Component Not Available
+        </Typography>
+        <Typography variant="body1">
+          The remote module was loaded but no component was found.
+        </Typography>
+      </ErrorContainer>
+    );
+  }
 
   return (
-    <ProjectDetailContainer maxWidth="lg">
-      {loading ? (
-        <LoadingFallback />
-      ) : error ? (
-        <ErrorContainer>
-          <Typography variant="h5" gutterBottom>
-            Error Loading Project
-          </Typography>
-          <Typography variant="body1">
-            We couldn't load the project details. Please try again later.
-          </Typography>
-          <Typography variant="body2" color="error" mt={2}>
-            {error.message}
-          </Typography>
-        </ErrorContainer>
-      ) : RemoteComponent ? (
-        <ErrorBoundary>
-          <Suspense fallback={<LoadingFallback />}>
-            <RemoteComponent />
-          </Suspense>
-        </ErrorBoundary>
-      ) : (
-        <Typography variant="h5" color="error">
-          Project component could not be loaded
-        </Typography>
-      )}
-    </ProjectDetailContainer>
+    <ErrorBoundary>
+      <Component />
+    </ErrorBoundary>
+  );
+};
+
+// New ShadowWrapper component
+// Shadow Wrapper needed to allow each app to define it's own global styles separately
+import { useTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
+
+const ShadowWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const shadowHost = useRef<HTMLDivElement>(null);
+  const shadowRoot = useRef<ShadowRoot | null>(null);
+  const theme = useTheme(); // Get the current theme from parent context
+  
+  useEffect(() => {
+    if (!shadowRoot.current && shadowHost.current) {
+      shadowRoot.current = shadowHost.current.attachShadow({ mode: 'open' });
+      const container = document.createElement('div');
+      shadowRoot.current.appendChild(container);
+      
+      const root = createRoot(container);
+      root.render(
+        <ThemeProvider theme={theme}>
+          <StyleSheetManager target={shadowRoot.current}>
+            {children}
+          </StyleSheetManager>
+        </ThemeProvider>
+      );
+    }
+  }, [children, theme]); // Add theme to dependencies
+  
+  return <div ref={shadowHost} />;
+};
+
+
+
+/**
+ * ProjectDetail component
+ * 
+ * This component displays a federated module for a specific project
+ * based on the projectId route parameter.
+ */
+const ProjectDetail: React.FC = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+
+  return (
+    <ShadowWrapper>
+      <DynamicRemoteComponent moduleName={projectId+"/App"} />
+    </ShadowWrapper>
   );
 };
 
