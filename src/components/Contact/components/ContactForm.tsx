@@ -17,6 +17,8 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import MessageIcon from '@mui/icons-material/Message';
 import SendIcon from '@mui/icons-material/Send';
 const CONTACT_URL = import.meta.env.VITE_CONTACT_EMAIL_URL;
+import { post } from 'aws-amplify/api';
+import { signRequest } from '@/services/amplify.service';
 
 // Define animations
 const fadeIn = keyframes`
@@ -257,49 +259,134 @@ const ContactForm: React.FC = () => {
     // Set submission state
     setIsSubmitting(true);
     setSubmitStatus('idle');
-    
+
     try {
-      // Send form data to backend
-      const response = await fetch(CONTACT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      
-      // Parse the response
-      const responseData = await response.json();
-      
-      // Handle response
-      if (response.ok) {
-        setSubmitStatus('success');
-        setResponseMessage(responseData.message || 'Thank you! Your message has been sent successfully.');
-        
-        // Reset form after successful submission
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          message: '',
+      // Sign request with AWS credentials
+      const signedRequest = await signRequest(CONTACT_URL, formData);
+
+      if (signedRequest) {
+        const response = await fetch(CONTACT_URL, {
+            method: signedRequest.method,
+            headers: signedRequest.headers,
+            body: signedRequest.body,
         });
-      } else {
-        // Show specific error message if available
-        if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
-          // Join multiple errors into a single message
-          setResponseMessage(`Error: ${responseData.errors.join(', ')}`);
+
+        // Parse the response
+        const responseData = await response.json();
+
+        // Handle response
+        if (response.ok) {
+          setSubmitStatus('success');
+          setResponseMessage(responseData.message || 'Thank you! Your message has been sent successfully.');
+
+          // Reset form after successful submission
+          setFormData({
+            name: '',
+            email: '',
+            phone: '',
+            message: '',
+          });
         } else {
-          setResponseMessage(responseData.message || 'Something went wrong. Please try again later.');
+          // Show specific error message if available
+          if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
+            // Join multiple errors into a single message
+            setResponseMessage(`Error: ${responseData.errors.join(', ')}`);
+          } else {
+            setResponseMessage(responseData.message || 'Something went wrong. Please try again later.');
+          }
+          setSubmitStatus('error');
         }
-        setSubmitStatus('error');
       }
     } catch (error) {
       console.error('Form submission error:', error);
       setSubmitStatus('error');
-      setResponseMessage('Network error. Please check your connection and try again.');
+      setResponseMessage('Form Submission Error');
     } finally {
       setIsSubmitting(false);
     }
+    
+    
+    // Original fetch
+    // try {
+    //   // Send form data to backend
+    //   const response = await fetch(CONTACT_URL, {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify(formData),
+    //   });
+      
+    //   // Parse the response
+    //   const responseData = await response.json();
+      
+    //   // Handle response
+    //   if (response.ok) {
+    //     setSubmitStatus('success');
+    //     setResponseMessage(responseData.message || 'Thank you! Your message has been sent successfully.');
+        
+    //     // Reset form after successful submission
+    //     setFormData({
+    //       name: '',
+    //       email: '',
+    //       phone: '',
+    //       message: '',
+    //     });
+    //   } else {
+    //     // Show specific error message if available
+    //     if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
+    //       // Join multiple errors into a single message
+    //       setResponseMessage(`Error: ${responseData.errors.join(', ')}`);
+    //     } else {
+    //       setResponseMessage(responseData.message || 'Something went wrong. Please try again later.');
+    //     }
+    //     setSubmitStatus('error');
+    //   }
+    // } catch (error) {
+    //   console.error('Form submission error:', error);
+    //   setSubmitStatus('error');
+    //   setResponseMessage('Network error. Please check your connection and try again.');
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
+
+    // Amplify post
+    // I can't fucking configure the god damn auth credentials
+    // try {
+    //   const restOperation = post({
+    //     apiName: "EmailPortfolioContact",
+    //     path: "/EmailPortfolioContact",
+    //     options: {
+    //       body: JSON.stringify(formData),
+    //     },
+    //   });
+    
+    //   console.log('restOperation', restOperation);
+    //   const { body } = await restOperation.response;
+    //   console.log('body', body);
+    //   const response = await body.json();
+    //   console.log('Success:', response);
+
+    //   // Handle response
+    //   if (response) {
+    //     setSubmitStatus('success');
+    //     setResponseMessage('Thank you! Your message has been sent successfully.');
+        
+    //     // Reset form after successful submission
+    //     setFormData({
+    //       name: '',
+    //       email: '',
+    //       phone: '',
+    //       message: '',
+    //     });
+    //   }
+    // } catch (error) {
+    //   console.error('Form submission error:', error);
+    //   setSubmitStatus('error');
+    //   setResponseMessage('Network error. Please check your connection and try again.');
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
   };
   
   // Reset the form and status
