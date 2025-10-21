@@ -104,7 +104,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   skills,
   projectUrl,
   alt = "Project thumbnail",
-  useExternalLink = false
+  useExternalLink = false // Default to internal routing and Module Federation
 }) => {
   const navigate = useNavigate();
   

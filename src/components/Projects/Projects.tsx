@@ -5,6 +5,7 @@ import ProjectCard from './components/ProjectCard';
 
 // Import project images
 import spotifyProjectImg from '../../assets/photos/sort-my-liked.png';
+import github_white from '../../assets/icons/github_white.png';
 
 // Styled components
 const ProjectsContainer = styled(Container)(({ theme }) => ({
@@ -52,7 +53,7 @@ const projectsData = [
     title: 'Spotify Sort My Liked',
     imageUrl: spotifyProjectImg,
     summary: 'An app that allows users to filter and sort their liked songs and save the results as a new playlist.',
-    skills: ['React', 'Express', 'AWS'],
+    skills: ['React', 'Express', 'EC2', 'Oauth', 'Spotify API'],
     projectUrl: 'https://github.com/ptoner1/sort-my-spotify-frontend',
     alt: 'Spotify Sort My Liked application screenshot',
     // Module Federation metadata
@@ -61,11 +62,15 @@ const projectsData = [
     componentName: './ProjectDetail'
   },
   {
-    id: 'deancraig',
-    title: 'Dean',
-    imageUrl: spotifyProjectImg,
-    summary: 'Mr Craig enjoys his evenings with a glass of scotch',
-    skills: ['Dean', 'Craig', 'George'],
+    id: 'PortfolioV2',
+    title: 'Portfolio V2',
+    imageUrl: github_white,
+    summary: "This website!  I've used it as an opportunity to develop AWS and bundling skills.",
+    skills: ['React', 'SES', 'S3', 'Lambda', 'Vite', 'Module Federation'],
+    projectUrl: 'https://github.com/ptoner1/portfolioV2',
+    alt: 'Portfolio V2 application screenshot',
+    useExternalLink: true
+    // componentName: './ProjectDetail'
   }
 ];
 
@@ -88,7 +93,7 @@ const Projects: React.FC = () => {
               skills={project.skills}
               projectUrl={project.projectUrl}
               alt={project.alt}
-              useExternalLink={false} // Use internal routing to federated modules
+              useExternalLink={project.useExternalLink}
             />
           </Grid>
         ))}
