@@ -29,6 +29,5 @@ This portfolio application is a modern, responsive web platform designed to show
 - Add unit and integration tests
 - Implement a CMS for easier content management
 - Add a blog section
-- Optimize image loading with lazy loading
 - Implement analytics to track user engagement
 
