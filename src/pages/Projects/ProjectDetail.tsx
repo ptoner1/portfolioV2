@@ -5,6 +5,7 @@ import { styled } from '@mui/material/styles';
 import { createRoot } from 'react-dom/client';
 import { loadRemoteModule } from '@/utils/federationUtils';
 import { StyleSheetManager } from 'styled-components';
+import Alert from '@/components/Alert/Alert';
 
 // Styled components
 
@@ -229,9 +230,12 @@ const ProjectDetail: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
 
   return (
+    <>
+    <Alert message="This microfrontend is being served from this domain:" link={import.meta.env.VITE_SPOTIFY_APP_URL.replace("/assets/remoteEntry.js", "")}/>
     <ShadowWrapper>
       <DynamicRemoteComponent moduleName={projectId+"/App"} />
     </ShadowWrapper>
+    </>
   );
 };
 
