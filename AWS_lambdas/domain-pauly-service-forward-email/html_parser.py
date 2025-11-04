@@ -77,7 +77,7 @@ def extract_json_from_html(html_body: str) -> Dict[str, Any]:
             
         except (json.JSONDecodeError, ValueError):
             continue
-    
+
     return {
         "userCode": extracted_json,
         "body": cleaned_body
@@ -141,7 +141,7 @@ def extract_json_from_html_v2(html_body: str) -> Dict[str, Any]:
 
 
 # Usage with your email object:
-def process_email_body(mailobject):
+def process_email_body(mailobject, isFromPaul):
     """
     Process email to extract JSON from HTML body.
     
@@ -149,11 +149,11 @@ def process_email_body(mailobject):
         mailobject: Email message object from email.message_from_string()
         
     Returns:
-        Dictionary with extracted JSON and modified HTML
+        Dictionary with extracted JSON, modified HTML, and email attachments
     """
     # Get HTML body from email
     html_body = None
-    
+
     if mailobject.is_multipart():
         for part in mailobject.walk():
             if part.get_content_type() == "text/html":
@@ -164,16 +164,26 @@ def process_email_body(mailobject):
             html_body = mailobject.get_payload(decode=True).decode('utf-8', errors='ignore')
     
     if html_body:
-        result = extract_json_from_html_v2(html_body)
-        print("JSON Result is: ")
-        print(result)
+        sender_text = ("<p style='margin-top:2rem'>------</p>"
+          + "The above message was received from "
+          + mailobject['From'].strip() + ", " 
+          + mailobject['Return-Path'].strip("<>"))
+
+        result = extract_json_from_html_v2(html_body) if isFromPaul else {"userCode": None, "body": html_body + sender_text}
+        
         # Update the email body with cleaned HTML if JSON was found
-        if result["userCode"] and mailobject.is_multipart():
+        if mailobject.is_multipart():
+            attachments = []
             for part in mailobject.walk():
                 if part.get_content_type() == "text/html":
                     part.set_payload(result["body"])
-                    break
-        
+                    continue
+                if part.get_content_disposition() == "attachment":
+                    print("Found attachment in html_parser: ")
+                    print(part.get_filename())
+                    attachments.append(part)
+
+            result['attachments'] = attachments
         return result
     
     return {"userCode": None, "body": html_body}
