@@ -1,0 +1,14 @@
+{
+  "name": "email-portfolio-contact",
+  "version": "1.0.0",
+  "description": "contact form emailer",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Paul Toner",
+  "license": "UNLICENCED",
+  "dependencies": {
+    "sanitize-html": "^2.17.0"
+  }
+}
