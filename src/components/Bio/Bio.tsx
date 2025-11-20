@@ -194,8 +194,8 @@ const Bio: React.FC = () => {
           </NameHeading>
           
           <BioText variant="body1">
-            Full-stack developer specializing in React, Angular, Java, Node.js, and SQL with 
-            experience building healthcare applications. I combine technical expertise with 
+            Full-stack developer specializing in React, Angular, Java, Node.js, SQL, and AWS with 
+            experience building email notification services. I combine technical expertise with 
             creative problem-solving to create intuitive, user-friendly experiences. When I'm 
             not coding, you can find me painting or exploring new technologies. Right now I'm 
             learning and practicing infrastructure skills with AWS.
