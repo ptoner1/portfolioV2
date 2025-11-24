@@ -5,6 +5,7 @@ import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
 import ScrollToTop from './components/utils/ScrollToTop';
 import { Box, styled, CircularProgress } from '@mui/material';
+import PageNotFoundComponent from './components/PageNotFound/PageNotFound';
 
 // Lazy loaded components for code splitting
 const Bio = lazy(() => import('./components/Bio/Bio'));
@@ -81,6 +82,7 @@ const App: React.FC = () => {
                 <Route path="/projects/:projectId" element={<RouteWithSuspense element={<ProjectDetail />} />} />
                 <Route path="/paintings" element={<RouteWithSuspense element={<PaintingsPage />} />} />
                 <Route path="/contact" element={<RouteWithSuspense element={<ContactPage />} />} />
+                <Route path="*" element={<RouteWithSuspense element={<PageNotFoundComponent />} />} />
               </Routes>
           </ContentWrapper>
           <Footer />
