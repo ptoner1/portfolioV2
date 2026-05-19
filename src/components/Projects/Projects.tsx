@@ -5,6 +5,7 @@ import ProjectCard from './components/ProjectCard';
 
 // Import project images
 import spotifyProjectImg from '../../assets/photos/sort-my-liked.png';
+import maasImg from '../../assets/photos/naas_overview.png';
 import github_white from '../../assets/icons/github_white.png';
 
 // Styled components
@@ -71,6 +72,17 @@ const projectsData = [
     alt: 'Portfolio V2 application screenshot',
     useExternalLink: true
     // componentName: './ProjectDetail'
+  },
+  {
+    id: 'MessagingService',
+    title: 'Messaging as a Service',
+    imageUrl: maasImg,
+    summary: "Full Stack application for email messaging service.",
+    skills: ['Java', 'Spring Boot', 'Postgres', 'Angular', 'SES', 'EC2', 'IBM MQ', 'JMS', 'SMTP'],
+    projectUrl: 'https://naas.paulyprograms.com',
+    alt: 'Maas Technical Diagram',
+    useExternalLink: true,
+    componentName: './ProjectDetail'
   }
 ];
 
