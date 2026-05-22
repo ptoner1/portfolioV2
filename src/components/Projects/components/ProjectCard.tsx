@@ -91,6 +91,9 @@ export interface ProjectCardProps {
   summary: string;
   skills: string[];
   projectUrl?: string; // Optional now, as we'll primarily use internal routing
+  remoteUrl?: string;
+  remoteName?: string;
+  moduleDirectory?: string;
   alt?: string;
   useExternalLink?: boolean; // Flag to determine if we should use external link or internal routing
 }
@@ -103,6 +106,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   summary,
   skills,
   projectUrl,
+  remoteUrl,
+  remoteName,
+  moduleDirectory,
   alt = "Project thumbnail",
   useExternalLink = false // Default to internal routing and Module Federation
 }) => {
@@ -114,7 +120,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       window.open(projectUrl, '_blank', 'noopener,noreferrer');
     } else {
       // Navigate to internal project detail page
-      navigate(`/projects/${id}`);
+      navigate(`/projects/${remoteName}`, {state: {remoteUrl, moduleDirectory}});
     }
   };
   

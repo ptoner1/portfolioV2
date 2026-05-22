@@ -1,3 +1,5 @@
+import { initFederation, loadRemoteModule as nativeLoadRemote } from '@angular-architects/native-federation-runtime';
+
 // Project metadata interface
 export interface ProjectMetadata {
   id: string;
@@ -13,67 +15,71 @@ export interface RemoteModuleOptions {
   module: string;
 }
 
-/**
- * Dynamically imports a module from a federated remote using Vite's Module Federation
- */
+// Global initialization flag to prevent registering the map multiple times
+let nativeFederationInitialized = false;
+
 export async function loadRemoteModule<T = any>(remoteModuleOptions: RemoteModuleOptions): Promise<T> {
+  const isNativeFederation = remoteModuleOptions.url.endsWith('.json');
+
+  // =================================================
+  // ENGINE A: Native Federation (Angular 19: ESBuild)
+  // =================================================
+  if (isNativeFederation) {
+    try {
+      if (!nativeFederationInitialized) {
+        await initFederation(remoteModuleOptions.url);
+        nativeFederationInitialized = true;
+      }
+
+      const module = await nativeLoadRemote<T>({
+        remoteName: remoteModuleOptions.scope,
+        exposedModule: remoteModuleOptions.module
+      });
+
+      return module;
+    } catch (error) {
+      console.error('Native Federation loader failed:', error);
+      throw error;
+    }
+  }
+
+  // ==================================================
+  // ENGINE B: Standard Federation (React/Vite Webpack)
+  // ==================================================
   try {
-    // Dynamically load the remote entry script
-    // This loads the remoteEntry.js file which exposes the init() and get() methods
-    const remoteEntry = await import(remoteModuleOptions.url);
+    // Dynamically import the classic remoteEntry.js script module
+    const remoteEntry = await import(/* @vite-ignore */ remoteModuleOptions.url);
     
-    console.log('Remote entry loaded:', remoteEntry);
-    
-    // Initialize the remote container with shared dependencies
-    // Vite's federation plugin expects a shared scope object
+    // Your original shared scope mapping configuration
     const shared = {
       react: {
         '18.2.0': {
-          get: async () => {
-            const react = await import('react');
-            return () => react;
-          },
+          get: async () => { const r = await import('react'); return () => r; },
           from: 'portfolio-app',
           loaded: true
         }
       },
       'react-dom': {
         '18.2.0': {
-          get: async () => {
-            const reactDom = await import('react-dom');
-            return () => reactDom;
-          },
+          get: async () => { const rd = await import('react-dom'); return () => rd; },
           from: 'portfolio-app',
           loaded: true
         }
       },
       'styled-components': {
         '6.1.0': {
-          get: async () => {
-            const styledComponents = await import('styled-components');
-            return () => styledComponents;
-          },
+          get: async () => { const sc = await import('styled-components'); return () => sc; },
           from: 'portfolio-app',
           loaded: true
         }
       }
     };
-    
-    // Initialize the remote container with the shared scope
+
     await remoteEntry.init(shared);
-    
-    // Get the module factory function
     const factory = await remoteEntry.get(remoteModuleOptions.module);
-    
-    // Execute the factory to get the actual module
-    const module = factory();
-    
-    console.log('Module executed:', module);
-    
-    return module;
+    return factory();
   } catch (error) {
-    console.error('Error loading remote module:', error);
+    console.error('Standard Webpack/Vite Federation loader failed:', error);
     throw error;
   }
 }
-

@@ -60,6 +60,7 @@ const projectsData = [
     // Module Federation metadata
     remoteName: 'spotifyProject',
     remoteUrl: import.meta.env.VITE_SPOTIFY_APP_URL,
+    moduleDirectory: './App',
     componentName: './ProjectDetail'
   },
   {
@@ -71,7 +72,6 @@ const projectsData = [
     projectUrl: 'https://github.com/ptoner1/portfolioV2',
     alt: 'Portfolio V2 application screenshot',
     useExternalLink: true
-    // componentName: './ProjectDetail'
   },
   {
     id: 'MessagingService',
@@ -79,9 +79,11 @@ const projectsData = [
     imageUrl: maasImg,
     summary: "Full Stack application for email messaging service.",
     skills: ['Java', 'Spring Boot', 'Postgres', 'Angular', 'SES', 'EC2', 'IBM MQ', 'JMS', 'SMTP'],
-    projectUrl: 'https://naas.paulyprograms.com',
-    alt: 'Maas Technical Diagram',
-    useExternalLink: true,
+    projectUrl: 'https://github.com/ptoner1/naas-custom',
+    alt: 'Naas Technical Diagram',
+    remoteName: 'naasApp',
+    remoteUrl: import.meta.env.VITE_NAAS_APP_URL,
+    moduleDirectory: './Component',
     componentName: './ProjectDetail'
   }
 ];
@@ -104,6 +106,9 @@ const Projects: React.FC = () => {
               summary={project.summary}
               skills={project.skills}
               projectUrl={project.projectUrl}
+              remoteUrl={project.remoteUrl}
+              remoteName={project.remoteName}
+              moduleDirectory={project.moduleDirectory}
               alt={project.alt}
               useExternalLink={project.useExternalLink}
             />

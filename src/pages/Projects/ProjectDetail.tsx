@@ -1,5 +1,5 @@
 import React, { useEffect, useState, Suspense, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Container } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { createRoot } from 'react-dom/client';
@@ -86,7 +86,7 @@ class ErrorBoundary extends React.Component<
  * Dynamic Remote Component Loader
  * Handles loading of federated modules with proper error handling
  */
-const DynamicRemoteComponent: React.FC<{ moduleName: string }> = ({ moduleName }) => {
+const DynamicRemoteComponent: React.FC<{ remoteUrl: string, remoteName: string, moduleDirectory: string }> = ({ remoteUrl, remoteName, moduleDirectory }) => {
   const [Component, setComponent] = useState<React.ComponentType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,13 +97,15 @@ const DynamicRemoteComponent: React.FC<{ moduleName: string }> = ({ moduleName }
         setLoading(true);
         setError(null);
         
-        console.log(`Loading remote module: ${moduleName}`);
+        console.log(`Loading remote module: ${remoteName}`);
+        console.log(`Loading remote module from: ${remoteUrl}`);
         
         // Use the loadRemoteModule utility to load the federated module
         const module = await loadRemoteModule({
-          url: import.meta.env.VITE_SPOTIFY_APP_URL || "",
-          scope: 'spotifyApp',
-          module: './App'
+          url: remoteUrl,
+          // scope: 'spotifyApp',
+          scope: remoteName,
+          module: moduleDirectory
         });
         
         console.log('Module loaded successfully:', module);
@@ -137,7 +139,7 @@ const DynamicRemoteComponent: React.FC<{ moduleName: string }> = ({ moduleName }
     };
 
     loadComponent();
-  }, [moduleName]);
+  }, [remoteUrl]);
 
   if (loading) {
     return <LoadingFallback />;
@@ -227,13 +229,14 @@ const ShadowWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
  * based on the projectId route parameter.
  */
 const ProjectDetail: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { remoteName } = useParams<{ remoteName: string }>();
+  const { remoteUrl, moduleDirectory } = useLocation().state || "";
 
   return (
     <>
-    <Alert message="This microfrontend is being served from this domain:" link={import.meta.env.VITE_SPOTIFY_APP_URL.replace("/assets/remoteEntry.js", "")}/>
+    <Alert message="This microfrontend is being served from this domain:" link={remoteUrl.replace("/assets", "").replace("/remoteEntry.json", "").replace("/remoteEntry.js", "")}/>
     <ShadowWrapper>
-      <DynamicRemoteComponent moduleName={projectId+"/App"} />
+      <DynamicRemoteComponent remoteUrl={remoteUrl} remoteName={remoteName+""} moduleDirectory={moduleDirectory} />
     </ShadowWrapper>
     </>
   );
