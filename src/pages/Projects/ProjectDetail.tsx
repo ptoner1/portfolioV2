@@ -97,18 +97,12 @@ const DynamicRemoteComponent: React.FC<{ remoteUrl: string, remoteName: string, 
         setLoading(true);
         setError(null);
         
-        console.log(`Loading remote module: ${remoteName}`);
-        console.log(`Loading remote module from: ${remoteUrl}`);
-        
         // Use the loadRemoteModule utility to load the federated module
         const module = await loadRemoteModule({
           url: remoteUrl,
-          // scope: 'spotifyApp',
           scope: remoteName,
           module: moduleDirectory
         });
-        
-        console.log('Module loaded successfully:', module);
         
         // Handle both default and named exports
         const ComponentToRender = module.default || module;
