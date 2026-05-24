@@ -58,7 +58,7 @@ const projectsData = [
     projectUrl: 'https://github.com/ptoner1/sort-my-spotify-frontend',
     alt: 'Spotify Sort My Liked application screenshot',
     // Module Federation metadata
-    remoteName: 'spotifyProject',
+    remoteName: 'spotifyApp',
     remoteUrl: import.meta.env.VITE_SPOTIFY_APP_URL,
     moduleDirectory: './App',
     componentName: './ProjectDetail'
