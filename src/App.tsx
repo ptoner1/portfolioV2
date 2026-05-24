@@ -79,7 +79,7 @@ const App: React.FC = () => {
                 <Route path="/about" element={<RouteWithSuspense element={<About />} />} />
                 <Route path="/experience" element={<RouteWithSuspense element={<About />} />} />
                 <Route path="/projects" element={<RouteWithSuspense element={<About />} />} />
-                <Route path="/projects/:remoteName" element={<RouteWithSuspense element={<ProjectDetail />} />} />
+                <Route path="/projects/:projectId" element={<RouteWithSuspense element={<ProjectDetail />} />} />
                 <Route path="/paintings" element={<RouteWithSuspense element={<PaintingsPage />} />} />
                 <Route path="/contact" element={<RouteWithSuspense element={<ContactPage />} />} />
                 <Route path="*" element={<RouteWithSuspense element={<PageNotFoundComponent />} />} />

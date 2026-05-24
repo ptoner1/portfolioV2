@@ -1,5 +1,3 @@
-import { initFederation, loadRemoteModule as nativeLoadRemote } from '@angular-architects/native-federation-runtime';
-
 // Project metadata interface
 export interface ProjectMetadata {
   id: string;
@@ -15,88 +13,67 @@ export interface RemoteModuleOptions {
   module: string;
 }
 
-// Global initialization flag to prevent registering the map multiple times
-let nativeFederationInitialized = false;
-
+/**
+ * Dynamically imports a module from a federated remote using Vite's Module Federation
+ */
 export async function loadRemoteModule<T = any>(remoteModuleOptions: RemoteModuleOptions): Promise<T> {
-  const isNativeFederation = remoteModuleOptions.url.endsWith('.json');
-
-  // =================================================
-  // ENGINE A: Native Federation (Angular 19: ESBuild)
-  // =================================================
-  if (isNativeFederation) {
-    try {
-      if (!nativeFederationInitialized) {
-        // 1. Manually build the exact native contract that initFederation tries to achieve
-        const baseSubdomainUrl = remoteModuleOptions.url.replace('/remoteEntry.json', '');
-        
-        // 2. Fetch the production manifest data manually
-        const manifestResponse = await fetch(remoteModuleOptions.url);
-        const manifestData = await manifestResponse.json();
-
-        // 3. Inject the manifest properties directly into Native Federation's global window memory
-        // This stops the engine from guessing paths or looking at www.paulyprograms.com
-        (window as any).__vdf_manifests__ = {
-          ...(typeof (window as any).__vdf_manifests__ === 'object' ? (window as any).__vdf_manifests__ : {}),
-          [remoteModuleOptions.scope]: {
-            ...manifestData,
-            baseUrl: `${baseSubdomainUrl}/` // Hard anchors your cloud context base path
-          }
-        };
-
-        nativeFederationInitialized = true;
-        console.log('Explicit Cloud Import Map attached safely for:', remoteModuleOptions.scope);
-      }
-
-      const module = await nativeLoadRemote<T>({
-        remoteName: remoteModuleOptions.scope,
-        exposedModule: remoteModuleOptions.module
-      });
-
-      return module;
-    } catch (error) {
-      console.error('Native Federation loader failed:', error);
-      throw error;
-    }
-  }
-
-  // ==================================================
-  // ENGINE B: Standard Federation (React/Vite Webpack)
-  // ==================================================
   try {
-    // Dynamically import the classic remoteEntry.js script module
-    const remoteEntry = await import(/* @vite-ignore */ remoteModuleOptions.url);
+    // Dynamically load the remote entry script
+    // This loads the remoteEntry.js file which exposes the init() and get() methods
+    const remoteEntry = await import(remoteModuleOptions.url);
     
-    // Your original shared scope mapping configuration
+    console.log('Remote entry loaded:', remoteEntry);
+    
+    // Initialize the remote container with shared dependencies
+    // Vite's federation plugin expects a shared scope object
     const shared = {
       react: {
         '18.2.0': {
-          get: async () => { const r = await import('react'); return () => r; },
+          get: async () => {
+            const react = await import('react');
+            return () => react;
+          },
           from: 'portfolio-app',
           loaded: true
         }
       },
       'react-dom': {
         '18.2.0': {
-          get: async () => { const rd = await import('react-dom'); return () => rd; },
+          get: async () => {
+            const reactDom = await import('react-dom');
+            return () => reactDom;
+          },
           from: 'portfolio-app',
           loaded: true
         }
       },
       'styled-components': {
         '6.1.0': {
-          get: async () => { const sc = await import('styled-components'); return () => sc; },
+          get: async () => {
+            const styledComponents = await import('styled-components');
+            return () => styledComponents;
+          },
           from: 'portfolio-app',
           loaded: true
         }
       }
     };
-
+    
+    // Initialize the remote container with the shared scope
     await remoteEntry.init(shared);
+    
+    // Get the module factory function
     const factory = await remoteEntry.get(remoteModuleOptions.module);
-    return factory();
+    
+    // Execute the factory to get the actual module
+    const module = factory();
+    
+    console.log('Module executed:', module);
+    
+    return module;
   } catch (error) {
-    console.error('Standard Webpack/Vite Federation loader failed:', error);
+    console.error('Error loading remote module:', error);
     throw error;
   }
 }
+
