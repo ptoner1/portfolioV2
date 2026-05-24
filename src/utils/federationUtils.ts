@@ -27,8 +27,25 @@ export async function loadRemoteModule<T = any>(remoteModuleOptions: RemoteModul
   if (isNativeFederation) {
     try {
       if (!nativeFederationInitialized) {
-        await initFederation(remoteModuleOptions.url);
+        // 1. Manually build the exact native contract that initFederation tries to achieve
+        const baseSubdomainUrl = remoteModuleOptions.url.replace('/remoteEntry.json', '');
+        
+        // 2. Fetch the production manifest data manually
+        const manifestResponse = await fetch(remoteModuleOptions.url);
+        const manifestData = await manifestResponse.json();
+
+        // 3. Inject the manifest properties directly into Native Federation's global window memory
+        // This stops the engine from guessing paths or looking at www.paulyprograms.com
+        (window as any).__vdf_manifests__ = {
+          ...(typeof (window as any).__vdf_manifests__ === 'object' ? (window as any).__vdf_manifests__ : {}),
+          [remoteModuleOptions.scope]: {
+            ...manifestData,
+            baseUrl: `${baseSubdomainUrl}/` // Hard anchors your cloud context base path
+          }
+        };
+
         nativeFederationInitialized = true;
+        console.log('Explicit Cloud Import Map attached safely for:', remoteModuleOptions.scope);
       }
 
       const module = await nativeLoadRemote<T>({
