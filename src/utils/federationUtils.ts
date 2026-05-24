@@ -15,13 +15,22 @@ export interface RemoteModuleOptions {
   module: string;
 }
 
+// Global initialization flag to prevent registering the map multiple times
+let nativeFederationInitialized = false;
+
 export async function loadRemoteModule<T = any>(remoteModuleOptions: RemoteModuleOptions): Promise<T> {
   const isNativeFederation = remoteModuleOptions.url.endsWith('.json');
 
+  // =================================================
   // ENGINE A: Native Federation (Angular 19: ESBuild)
-  // Native Federation remotes are pre-loaded in main.tsx before we render ReactApp.
+  // =================================================
   if (isNativeFederation) {
     try {
+      if (!nativeFederationInitialized) {
+        await initFederation(remoteModuleOptions.url);
+        nativeFederationInitialized = true;
+      }
+
       const module = await nativeLoadRemote<T>({
         remoteName: remoteModuleOptions.scope,
         exposedModule: remoteModuleOptions.module
@@ -34,7 +43,9 @@ export async function loadRemoteModule<T = any>(remoteModuleOptions: RemoteModul
     }
   }
 
+  // ==================================================
   // ENGINE B: Standard Federation (React/Vite Webpack)
+  // ==================================================
   try {
     // Dynamically import the classic remoteEntry.js script module
     const remoteEntry = await import(/* @vite-ignore */ remoteModuleOptions.url);
